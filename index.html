@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Context Framework - Olaf Kopp</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Open+Sans:wght@400;500;600&family=Archivo+Black&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Open Sans', Helvetica, Arial, sans-serif; background: #000000; color: #ffffff; }
+        .font-playfair { font-family: 'Playfair Display', Georgia, serif; }
+        .font-archivo { font-family: 'Archivo Black', Helvetica, Arial, sans-serif; }
+        .btn-fyma { background: #cf9b00; color: #ffffff; border-radius: 10px; font-weight: 600; transition: all 0.3s ease; }
+        .btn-fyma:hover { background: #ffb23d; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(207, 155, 0, 0.4); }
+        .btn-back { background: transparent; color: #27240e; border: 2px solid #27240e; border-radius: 10px; font-weight: 600; transition: all 0.3s ease; }
+        .btn-back:hover { background: #27240e; color: #ffffff; }
+        
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-100px) rotateY(-15deg); } to { opacity: 1; transform: translateX(0) rotateY(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100px) rotateY(15deg); } to { opacity: 1; transform: translateX(0) rotateY(0); } }
+        @keyframes slideInTop { from { opacity: 0; transform: translateY(-100px) rotateX(15deg); } to { opacity: 1; transform: translateY(0) rotateX(0); } }
+        @keyframes slideInBottom { from { opacity: 0; transform: translateY(100px) rotateX(-15deg); } to { opacity: 1; transform: translateY(0) rotateX(0); } }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes typewriter { from { width: 0; } to { width: 100%; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .animate-left { animation: slideInLeft 0.8s ease-out forwards; }
+        .animate-right { animation: slideInRight 0.8s ease-out 0.2s forwards; opacity: 0; }
+        .animate-top { animation: slideInTop 0.8s ease-out 0.4s forwards; opacity: 0; }
+        .animate-bottom { animation: slideInBottom 0.8s ease-out 0.6s forwards; opacity: 0; }
+        .animate-fade { animation: fadeInScale 0.6s ease-out 1s forwards; opacity: 0; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        .quadrant { transition: all 0.3s ease; transform-style: preserve-3d; }
+        .quadrant:hover { transform: scale(1.03) translateY(-5px); box-shadow: 0 20px 40px rgba(207, 155, 0, 0.3); }
+        
+        .title-reveal { overflow: hidden; white-space: nowrap; animation: typewriter 1.5s steps(30) 0.5s forwards; width: 0; border-right: 3px solid #cf9b00; }
+        
+        .card-container { perspective: 1000px; }
+        
+        .radial-chart { position: relative; width: 200px; height: 200px; }
+        .radial-chart svg { transform: rotate(-90deg); }
+        .radial-chart circle { fill: none; stroke-width: 12; stroke-linecap: round; }
+        .radial-chart .bg { stroke: rgba(255,255,255,0.1); }
+        .radial-chart .progress { transition: stroke-dashoffset 1s ease-out; }
+        
+        .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #cf9b00; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen bg-black">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        const frameworkData = {
+            phases: [
+                {
+                    id: 1,
+                    title: "KI-Text-Analyse",
+                    subtitle: "Phase 1: Analyse",
+                    description: "Prüfen Sie, wie gut KI-Systeme Ihre Marke verstehen und erkennen.",
+                    questions: [
+                        "Wird Ihr Markenname konsequent als Hauptthema genutzt?",
+                        "Sind die Sätze klar und einfach strukturiert?",
+                        "Wird Ihre Marke von KI-Systemen als zentral erkannt?",
+                        "Sind alle wichtigen Marken-Attribute deutlich beschrieben?"
+                    ],
+                    media: "owned",
+                    color: "#cf9b00",
+                    icon: "🔍",
+                    animation: "animate-left"
+                },
+                {
+                    id: 2,
+                    title: "Wissens-Bausteine",
+                    subtitle: "Phase 2: Content",
+                    description: "Erstellen Sie kurze, prägnante Text-Abschnitte für maximale Klarheit.",
+                    questions: [
+                        "Sind Ihre Texte in kurze, knackige Abschnitte gegliedert?",
+                        "Behandelt jeder Absatz genau eine Aussage?",
+                        "Sind die Absätze kurz und verständlich?",
+                        "Enthalten alle Abschnitte wichtige Marken-Informationen?"
+                    ],
+                    media: "owned",
+                    color: "#ffb23d",
+                    icon: "💎",
+                    animation: "animate-right"
+                },
+                {
+                    id: 3,
+                    title: "Externe Bestätigung",
+                    subtitle: "Phase 3: Vertrauen",
+                    description: "Pflegen Sie Profile auf externen Plattformen für mehr Vertrauen.",
+                    questions: [
+                        "Sind Ihre Markeninformationen auf LinkedIn aktuell?",
+                        "Gibt es einen aktuellen Wikipedia-Eintrag?",
+                        "Sind Branchenverzeichnisse aktuell und vollständig?",
+                        "Gibt es widersprüchliche Angaben auf verschiedenen Kanälen?"
+                    ],
+                    media: "earned",
+                    color: "#228B22",
+                    icon: "✅",
+                    animation: "animate-top"
+                }
+            ],
+            mediaTypes: {
+                owned: { title: "Eigene Kanäle", examples: ["Website", "Wikipedia", "Content"] },
+                earned: { title: "Externe Kanäle", examples: ["PR", "Reviews", "Communities"] }
+            }
+        };
+        
+        const bonusData = {
+            title: "Expert Level",
+            questions: [
+                "Haben Sie eine durchgängige Content-Strategie?",
+                "Sprechen Sie Ihre Zielgruppe mit passenden Inhalten an?",
+                "Passen Sie Ihre Inhalte basierend auf Ergebnissen an?"
+            ],
+            icon: "⭐",
+            color: "#cf9b00",
+            animation: "animate-bottom"
+        };
+        
+        // Radial Chart Component
+        function RadialChart({ percentage, color, size = 160, label, sublabel }) {
+            const radius = (size - 24) / 2;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (percentage / 100) * circumference;
+            
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="relative" style={{ width: size, height: size }}>
+                        <svg width={size} height={size} className="transform -rotate-90">
+                            <circle
+                                cx={size/2}
+                                cy={size/2}
+                                r={radius}
+                                stroke="rgba(255,255,255,0.1)"
+                                strokeWidth="12"
+                                fill="none"
+                            />
+                            <circle
+                                cx={size/2}
+                                cy={size/2}
+                                r={radius}
+                                stroke={color}
+                                strokeWidth="12"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeDasharray={circumference}
+                                strokeDashoffset={strokeDashoffset}
+                                style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-3xl font-bold" style={{ color }}>{percentage}%</span>
+                            {sublabel && <span className="text-xs text-gray-400">{sublabel}</span>}
+                        </div>
+                    </div>
+                    {label && <span className="mt-2 text-sm text-gray-300">{label}</span>}
+                </div>
+            );
+        }
+        
+        // Bar Chart Component
+        function BarChart({ data }) {
+            const max = 100;
+            
+            return (
+                <div className="space-y-4">
+                    {data.map((item, idx) => (
+                        <div key={idx} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-300">{item.label}</span>
+                                <span style={{ color: item.color }}>{item.value}%</span>
+                            </div>
+                            <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full rounded-full transition-all duration-1000 ease-out"
+                                    style={{ 
+                                        width: `${item.value}%`, 
+                                        background: `linear-gradient(90deg, ${item.color}, ${item.color}dd)` 
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+        
+        function App() {
+            const [section, setSection] = useState('loading');
+            const [password, setPassword] = useState('');
+            const [currentPhase, setCurrentPhase] = useState(0);
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [answers, setAnswers] = useState({});
+            const [loadingProgress, setLoadingProgress] = useState(0);
+            const [showBonus, setShowBonus] = useState(false);
+            const [bonusAnswers, setBonusAnswers] = useState({});
+            const [animationReady, setAnimationReady] = useState(false);
+            
+            useEffect(() => {
+                if (section === 'loading') {
+                    const interval = setInterval(() => {
+                        setLoadingProgress(p => {
+                            if (p >= 100) { 
+                                clearInterval(interval); 
+                                setTimeout(() => setSection('hero'), 500); 
+                                return 100; 
+                            }
+                            return p + 5;
+                        });
+                    }, 100);
+                    return () => clearInterval(interval);
+                }
+                
+                if (section === 'framework') {
+                    setTimeout(() => setAnimationReady(true), 100);
+                }
+            }, [section]);
+            
+            const handleLogin = () => {
+                if (password === 'Social Marketing 2026') {
+                    setAnimationReady(false);
+                    setSection('framework');
+                } else alert('Falsches Passwort');
+            };
+            
+            const handleAnswer = (score) => {
+                if (showBonus) {
+                    setBonusAnswers({...bonusAnswers, [currentQuestion]: score});
+                    if (currentQuestion < bonusData.questions.length - 1) {
+                        setCurrentQuestion(currentQuestion + 1);
+                    } else {
+                        setSection('report');
+                    }
+                } else {
+                    const key = `${currentPhase}-${currentQuestion}`;
+                    setAnswers({...answers, [key]: score});
+                    
+                    const phase = frameworkData.phases[currentPhase];
+                    if (currentQuestion < phase.questions.length - 1) {
+                        setCurrentQuestion(currentQuestion + 1);
+                    } else if (currentPhase < frameworkData.phases.length - 1) {
+                        setCurrentPhase(currentPhase + 1);
+                        setCurrentQuestion(0);
+                    } else {
+                        setShowBonus(true);
+                        setCurrentPhase(3);
+                        setCurrentQuestion(0);
+                    }
+                }
+            };
+            
+            const calculateScores = () => {
+                const phaseScores = frameworkData.phases.map((phase, idx) => {
+                    let sum = 0, count = 0;
+                    phase.questions.forEach((_, qIdx) => {
+                        const val = answers[`${idx}-${qIdx}`];
+                        if (val) { sum += val; count++; }
+                    });
+                    return {
+                        ...phase,
+                        score: count > 0 ? Math.round((sum / (count * 5)) * 100) : 0,
+                        avg: count > 0 ? Math.round(sum / count * 10) / 10 : 0
+                    };
+                });
+                
+                let bonusSum = 0, bonusCount = 0;
+                Object.values(bonusAnswers).forEach(v => {
+                    if (v) { bonusSum += v; bonusCount++; }
+                });
+                const bonusScore = bonusCount > 0 ? Math.round((bonusSum / (bonusCount * 5)) * 100) : 0;
+                const totalScore = phaseScores.reduce((a, p) => a + p.score, 0) / phaseScores.length;
+                
+                return { phaseScores, totalScore, bonusScore };
+            };
+            
+            if (section === 'loading') {
+                return (
+                    <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
+                        <div className="text-center">
+                            <div className="font-playfair text-3xl mb-2 text-[#cf9b00]">Olaf Kopp</div>
+                            <div className="font-archivo text-5xl mb-6 text-[#cf9b00]">Brand Context</div>
+                            <div className="text-xl text-[#ffb23d] mb-8">Brand Context Framework</div>
+                            <div className="w-64 h-2 bg-gray-800 rounded-full overflow-hidden mb-4">
+                                <div className="h-full bg-[#cf9b00] transition-all duration-100" style={{width: loadingProgress + '%'}} />
+                            </div>
+                            <div className="text-gray-400 text-sm">Loading...</div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            if (section === 'hero') {
+                return (
+                    <div className="min-h-screen bg-black flex flex-col justify-center items-center px-4">
+                        <div className="text-center max-w-4xl">
+                            <div className="mb-6">
+                                <span className="inline-block px-4 py-2 border-2 border-[#cf9b00] rounded-full text-[#cf9b00] text-sm font-semibold">
+                                    Aufgesang GmbH x Olaf Kopp
+                                </span>
+                            </div>
+                            
+                            <h1 className="font-playfair text-5xl md:text-7xl font-bold mb-6 text-white">
+                                <span className="text-[#cf9b00]">Brand</span> Context
+                                <br/>
+                                <span className="text-[#ffb23d]">Optimization</span>
+                            </h1>
+                            
+                            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                                Das 3-Phasen Framework für sichtbare Marken in der KI-Zeit.
+                                <br/>
+                                Machen Sie Ihre Marke für KI-Systeme verständlich.
+                            </p>
+                            
+                            <button onClick={() => setSection('login')} className="btn-fyma px-8 py-4 text-lg">
+                                Framework starten →
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // IMPROVED LOGIN SECTION
+            if (section === 'login') {
+                return (
+                    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+                        <div className="max-w-md w-full">
+                            {/* Header */}
+                            <div className="text-center mb-8">
+                                <div className="font-playfair text-4xl font-bold mb-2 text-[#cf9b00]">Willkommen</div>
+                                <p className="text-gray-400">
+                                    Brand Context Assessment
+                                </p>
+                            </div>
+                            
+                            {/* Info Card */}
+                            <div className="glass-card rounded-2xl p-6 mb-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <span className="text-2xl">🔒</span>
+                                    <span className="text-white font-semibold">Geschützter Bereich</span>
+                                </div>
+                                <p className="text-gray-400 text-sm mb-4">
+                                    Dieses Assessment ist passwortgeschützt. Bitte geben Sie das Zugangspasswort ein, um fortzufahren.
+                                </p>                                
+                                <div className="space-y-2 text-sm text-gray-500">
+                                    <div className="flex items-center gap-2">
+                                        <span>✓</span>
+                                        <span>12 Assessment-Fragen</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span>✓</span>
+                                        <span>Detaillierte Auswertung</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span>✓</span>
+                                        <span>Handlungsempfehlungen</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Login Form */}
+                            <div className="border border-[#cf9b00]/30 bg-gray-900/50 rounded-2xl p-6">
+                                <label className="block text-sm text-gray-400 mb-2">
+                                    Passwort eingeben
+                                </label>
+                                
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Passwort..."
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white mb-4 focus:border-[#cf9b00] focus:outline-none"
+                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                />
+                                
+                                <button onClick={handleLogin} className="w-full btn-fyma py-3">
+                                    Einloggen →
+                                </button>
+                                
+                                <p className="text-center text-xs text-gray-500 mt-4">
+                                    © Olaf Kopp | Aufgesang GmbH
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            if (section === 'framework') {
+                return (
+                    <div className="min-h-screen bg-[#e6e6e9] py-12 px-4">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="text-center mb-12">
+                                <div className="overflow-hidden">
+                                    <h2 className="font-playfair text-4xl font-bold mb-4 inline-block title-reveal" 
+                                        style={{color: '#000000'}}>
+                                        Das Brand Context Framework
+                                    </h2>
+                                </div>
+                                <p className="animate-fade" style={{color: '#000000'}}>
+                                    © Olaf Kopp | Aufgesang GmbH | KI-sichtbare Marken
+                                </p>
+                            </div>
+                            
+                            <div className="card-container grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                                {frameworkData.phases.map((phase, idx) => (
+                                    <div 
+                                        key={idx}
+                                        className={`quadrant bg-white rounded-2xl p-6 shadow-lg cursor-pointer border-l-4 ${animationReady ? phase.animation : 'opacity-0'}`}
+                                        style={{borderLeftColor: phase.color}}
+                                        onClick={() => {
+                                            setCurrentPhase(idx);
+                                            setCurrentQuestion(0);
+                                            setShowBonus(false);
+                                            setSection('interview');
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-3xl">{phase.icon}</span>
+                                                <div className="font-archivo text-2xl" style={{color: '#000000'}}>
+                                                    Phase {idx + 1}
+                                                </div>
+                                            </div>
+                                            <span className="px-3 py-1 rounded-full text-sm font-semibold" 
+                                                  style={{background: phase.color + '20', color: phase.color}}>
+                                                {phase.media === 'owned' ? 'Eigene Kanäle' : 'Externe Kanäle'}
+                                            </span>
+                                        </div>
+                                        
+                                        <h3 className="font-playfair text-xl font-bold mb-2" style={{color: '#000000'}}>
+                                            {phase.title}
+                                        </h3>
+                                        
+                                        <p className="text-sm mb-4" style={{color: '#333333'}}>
+                                            {phase.description}
+                                        </p>
+                                        
+                                        <div className="flex gap-2 flex-wrap">
+                                            {frameworkData.mediaTypes[phase.media].examples.slice(0, 3).map((ex, i) => (
+                                                <span key={i} className="text-xs px-2 py-1 rounded" 
+                                                      style={{background: '#f0f0f0', color: '#000000'}}>
+                                                    {ex}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                <div 
+                                    className={`quadrant bg-gradient-to-br from-[#cf9b00] to-[#ffb23d] rounded-2xl p-6 cursor-pointer ${animationReady ? bonusData.animation : 'opacity-0'}`}
+                                    onClick={() => {
+                                        setCurrentPhase(3);
+                                        setCurrentQuestion(0);
+                                        setShowBonus(true);
+                                        setSection('interview');
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <span className="text-3xl">{bonusData.icon}</span>
+                                        <div className="font-archivo text-2xl" style={{color: '#000000'}}>
+                                            Expert
+                                        </div>
+                                    </div>
+                                    
+                                    <h3 className="font-playfair text-xl font-bold mb-2" style={{color: '#000000'}}>
+                                        3 Zusatz-Fragen
+                                    </h3>
+                                    
+                                    <p className="text-sm mb-4" style={{color: '#333333'}}>
+                                        Content-Strategie, Personalisierung, Daten-Optimierung
+                                    </p>
+                                    
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">🏢</span>
+                                            <span className="text-sm font-semibold" style={{color: '#000000'}}>Eigene Kanäle</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">🤝</span>
+                                            <span className="text-sm font-semibold" style={{color: '#000000'}}>Externe Kanäle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="text-center animate-fade">
+                                <p className="mb-6" style={{color: '#000000'}}>
+                                    Klicke auf einen Bereich, um das Assessment zu starten
+                                </p>
+                                <button 
+                                    onClick={() => {
+                                        setCurrentPhase(0);
+                                        setCurrentQuestion(0);
+                                        setShowBonus(false);
+                                        setSection('interview');
+                                    }} 
+                                    className="btn-fyma px-8 py-4 text-lg"
+                                >
+                                    Assessment starten →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            if (section === 'interview') {
+                const phase = showBonus 
+                    ? { title: "Zusatz-Fragen", subtitle: "Experten Level", description: "Erweiterte Fragen zur Content-Strategie", questions: bonusData.questions }
+                    : frameworkData.phases[currentPhase];
+                const totalQuestions = showBonus ? 3 : 12;
+                const answeredQuestions = showBonus 
+                    ? Object.keys(bonusAnswers).length 
+                    : Object.keys(answers).length;
+                const progress = (answeredQuestions / totalQuestions) * 100;
+                const questionIndex = showBonus 
+                    ? currentQuestion + 12 
+                    : frameworkData.phases.slice(0, currentPhase).reduce((sum, p) => sum + p.questions.length, 0) + currentQuestion;
+                
+                return (
+                    <div className="min-h-screen bg-[#e6e6e9] py-12 px-4">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="mb-4 flex justify-between items-center">
+                                <button 
+                                    onClick={() => setSection('framework')}
+                                    className="btn-back px-4 py-2 flex items-center gap-2"
+                                >
+                                    <span>←</span> Übersicht
+                                </button>
+                            </div>
+                            
+                            <div className="mb-8">
+                                <div className="flex justify-between text-sm mb-2" style={{color: '#000000'}}>
+                                    <span>{showBonus ? 'Expert' : `Phase ${currentPhase + 1}/3`}: {phase.title}</span>
+                                    <span>{questionIndex + 1}/{totalQuestions} Fragen</span>
+                                </div>
+                                
+                                <div className="h-2 bg-white rounded-full overflow-hidden">
+                                    <div className="h-full bg-gradient-to-r from-[#cf9b00] to-[#ffb23d] transition-all duration-300" style={{width: progress + '%'}} />
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-2xl p-8 shadow-lg">
+                                <div className="text-sm font-semibold mb-2" style={{color: showBonus ? '#cf9b00' : phase.color}}>
+                                    {phase.subtitle}
+                                </div>
+                                
+                                <h3 className="font-playfair text-2xl font-bold mb-4" style={{color: '#000000'}}>
+                                    {phase.questions[currentQuestion]}
+                                </h3>
+                                
+                                <p className="mb-6" style={{color: '#333333'}}>
+                                    {phase.description}
+                                </p>
+                                
+                                <div className="grid grid-cols-5 gap-3">
+                                    {[1,2,3,4,5].map(score => (
+                                        <button key={score} onClick={() => handleAnswer(score)}
+                                            className={`p-4 border-2 rounded-xl transition-all hover:scale-105 ${
+                                                score <= 2 ? 'border-red-300 hover:border-red-500 text-red-600' :
+                                                score === 3 ? 'border-yellow-300 hover:border-yellow-500 text-yellow-600' :
+                                                'border-green-300 hover:border-green-500 text-green-600'
+                                            }`}
+                                        >
+                                            <div className="text-xl mb-1">{score}</div>
+                                            <div className="text-xs">
+                                                {score === 1 ? 'Nie' : 
+                                                 score === 2 ? 'Selten' : 
+                                                 score === 3 ? 'Manchmal' : 
+                                                 score === 4 ? 'Oft' : 'Immer'}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <div className="mt-6 flex justify-center items-center gap-4">
+                                    {(currentQuestion > 0 || currentPhase > 0) && (
+                                        <button 
+                                            onClick={() => {
+                                                if (currentQuestion > 0) {
+                                                    setCurrentQuestion(currentQuestion - 1);
+                                                } else if (currentPhase > 0) {
+                                                    setCurrentPhase(currentPhase - 1);
+                                                    setCurrentQuestion(frameworkData.phases[currentPhase - 1].questions.length - 1);
+                                                }
+                                            }}
+                                            className="text-sm px-4 py-2 border border-gray-400 rounded-xl hover:bg-gray-100 transition-all"
+                                            style={{color: '#000000'}}
+                                        >
+                                            ← Vorherige Frage
+                                        </button>
+                                    )}
+                                    
+                                    <span className="text-sm" style={{color: '#666666'}}>
+                                        Frage {questionIndex + 1} von {totalQuestions}
+                                    </span>
+                                    
+                                    <div className="w-28"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // IMPROVED REPORT SECTION
+            if (section === 'report') {
+                const { phaseScores, totalScore, bonusScore } = calculateScores();
+                const barData = phaseScores.map(p => ({ label: p.title, value: p.score, color: p.color }));
+                
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-[#243e36] via-[#1a2d27] to-[#243e36] py-12 px-4 text-white">
+                        <div className="max-w-5xl mx-auto">
+                            {/* Header */}
+                            <div className="text-center mb-12">
+                                <div className="inline-block mb-4">
+                                    <span className="text-6xl animate-float">📊</span>
+                                </div>
+                                <h2 className="font-playfair text-4xl font-bold mb-4 text-[#cf9b00]">
+                                    Dein Brand Context Report
+                                </h2>                                
+                                <p className="text-gray-400">
+                                    Basierend auf {12 + (bonusScore > 0 ? 3 : 0)} beantworteten Fragen
+                                </p>
+                            </div>
+                            
+                            {/* Main Score */}
+                            <div className="glass-card rounded-3xl p-8 mb-8 text-center">
+                                <div className="flex justify-center mb-6">
+                                    <RadialChart 
+                                        percentage={Math.round(totalScore)} 
+                                        color="#cf9b00" 
+                                        size={200}
+                                        label="Gesamtscore"
+                                        sublabel="12 Hauptfragen"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-[#cf9b00]">{phaseScores[0].score}%</div>
+                                        <div className="text-xs text-gray-400">KI-Analyse</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-[#ffb23d]">{phaseScores[1].score}%</div>
+                                        <div className="text-xs text-gray-400">Content</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-[#228B22]">{phaseScores[2].score}%</div>
+                                        <div className="text-xs text-gray-400">Validierung</div>
+                                    </div>
+                                </div>
+                                
+                                {bonusScore > 0 && (
+                                    <div className="mt-6 pt-6 border-t border-white/10">
+                                        <div className="flex items-center justify-center gap-4">
+                                            <span className="text-2xl">⭐</span>
+                                            <div className="text-left">
+                                                <div className="text-sm text-[#ffb23d]">Expert-Bonus</div>
+                                                <div className="text-3xl font-bold text-[#ffb23d]">+{bonusScore}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Detailed Breakdown */}
+                            <div className="grid md:grid-cols-2 gap-6 mb-8">
+                                {/* Radial Charts */}
+                                <div className="glass-card rounded-2xl p-6">
+                                    <h3 className="font-playfair text-xl font-bold mb-6 text-[#cf9b00]">
+                                        Phase-Details
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-3 gap-4">
+                                        {phaseScores.map((phase, idx) => (
+                                            <RadialChart 
+                                                key={idx}
+                                                percentage={phase.score} 
+                                                color={phase.color}
+                                                size={120}
+                                                label={`P${idx + 1}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Bar Chart */}
+                                <div className="glass-card rounded-2xl p-6">
+                                    <h3 className="font-playfair text-xl font-bold mb-6 text-[#cf9b00]">
+                                        Übersicht
+                                    </h3>
+                                    
+                                    <BarChart data={barData} />
+                                </div>
+                            </div>
+                            
+                            {/* Recommendations */}
+                            <div className="glass-card rounded-2xl p-6 mb-8">
+                                <h3 className="font-playfair text-xl font-bold mb-6 text-[#cf9b00] flex items-center gap-2">
+                                    <span>💡</span> Handlungsempfehlungen
+                                </h3>
+                                
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {totalScore < 30 && (
+                                        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                                            <div className="text-red-400 font-semibold mb-1">🎯 Priorität</div>
+                                            <div className="text-sm text-gray-300">Starten Sie mit einer KI-Text-Analyse</div>
+                                        </div>
+                                    )}
+                                    
+                                    {phaseScores[0].score < 50 && (
+                                        <div className="bg-[#cf9b00]/10 border border-[#cf9b00]/30 rounded-xl p-4">
+                                            <div className="text-[#cf9b00] font-semibold mb-1">🔍 Phase 1</div>
+                                            <div className="text-sm text-gray-300">Prüfen Sie, ob KI-Systeme Ihre Marke erkennen</div>
+                                        </div>
+                                    )}
+                                    
+                                    {phaseScores[1].score < 50 && (
+                                        <div className="bg-[#ffb23d]/10 border border-[#ffb23d]/30 rounded-xl p-4">
+                                            <div className="text-[#ffb23d] font-semibold mb-1">💎 Phase 2</div>
+                                            <div className="text-sm text-gray-300">Erstellen Sie kurze Wissens-Bausteine</div>
+                                        </div>
+                                    )}
+                                    
+                                    {phaseScores[2].score < 50 && (
+                                        <div className="bg-[#228B22]/10 border border-[#228B22]/30 rounded-xl p-4">
+                                            <div className="text-[#228B22] font-semibold mb-1">✅ Phase 3</div>
+                                            <div className="text-sm text-gray-300">Pflegen Sie Wikipedia & LinkedIn aktuell</div>
+                                        </div>
+                                    )}
+                                    
+                                    {totalScore >= 70 && (
+                                        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                                            <div className="text-green-400 font-semibold mb-1">🚀 Exzellent!</div>
+                                            <div className="text-sm text-gray-300">Erweitern Sie auf externe Kanäle</div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="bg-[#cf9b00]/10 border border-[#cf9b00]/30 rounded-xl p-4">
+                                        <div className="text-[#cf9b00] font-semibold mb-1">📊 Tipp</div>
+                                        <div className="text-sm text-gray-300">Nutzen Sie klare Marken-Beschreibungen für KI-Systeme</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Actions */}
+                            <div className="flex flex-wrap gap-4 justify-center">
+                                <button onClick={() => {
+                                    setSection('interview');
+                                    setCurrentPhase(0);
+                                    setCurrentQuestion(0);
+                                    setAnswers({});
+                                    setBonusAnswers({});
+                                    setShowBonus(false);
+                                }} className="border border-gray-500 text-gray-300 hover:border-[#cf9b00] hover:text-[#cf9b00] px-6 py-3 rounded-2xl transition-all">
+                                    🔄 Neu starten
+                                </button>
+                                
+                                <button onClick={() => setSection('framework')} 
+                                    className="border border-[#cf9b00] text-[#cf9b00] hover:bg-[#cf9b00] hover:text-black px-6 py-3 rounded-2xl transition-all">
+                                    ← Zur Übersicht
+                                </button>
+                                
+                                <button onClick={() => window.print()} 
+                                    className="btn-fyma px-6 py-3 flex items-center gap-2">
+                                    📄 PDF exportieren
+                                </button>
+                            </div>
+                            
+                            {/* Footer */}
+                            <div className="text-center mt-12 text-gray-500 text-sm">
+                                <p>© Olaf Kopp | Aufgesang GmbH</p>
+                                <p className="mt-2">Brand Context Optimization für die KI-Zeit</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+        }
+        
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
